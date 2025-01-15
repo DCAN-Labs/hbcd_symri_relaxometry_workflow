@@ -283,17 +283,17 @@ def qalas_selection_with_qu_motion(downloaded_jsons):
             if temp_scan['SeriesType'] == 'qMRI':
                 sys.stdout.write('         qMRI present in current json: {}\n'.format(temp_json))
                 sys.stdout.write('            QU: {}\n'.format(temp_scan['QU_motion']))
-                sys.stdout.write('            Compliant: {}\n'.format(temp_scan['HBCD_compliant']))
+                sys.stdout.write('            QC: {}\n'.format(temp_scan['QC']))
                 sys.stdout.write('            AQ: {}\n'.format(temp_scan['aqc_motion']))
                 sys.stdout.write('            brain_SNR: {}\n'.format(temp_scan['brain_SNR']))
                 sys.stdout.flush()
-                #Be sure that at least the QU_motion, aqc_motion and HBCD_compliant fields are there
-                if (type(temp_scan['QU_motion']) == type(None)) or (type(temp_scan['aqc_motion']) == type(None)) or (type(temp_scan['HBCD_compliant']) == type(None)) or (type(temp_scan['brain_SNR']) == type(None)):
-                    sys.stdout.write('   Processing will either be attempted later or without QU_motion: Either QU_motion, aqc_motion, or HBCD_compliant status is missing for one scan within {}'.format(temp_json))
+                #Be sure that at least the QU_motion, aqc_motion and QC fields are there
+                if (type(temp_scan['QU_motion']) == type(None)) or (type(temp_scan['aqc_motion']) == type(None)) or (type(temp_scan['QC']) == type(None)) or (type(temp_scan['brain_SNR']) == type(None)):
+                    sys.stdout.write('   Processing will either be attempted later or without QU_motion: Either QU_motion, aqc_motion, or QC status is missing for one scan within {}'.format(temp_json))
                     sys.stdout.flush()
                     return None, True
                 try:
-                    if temp_scan['HBCD_compliant'] == 'Yes':
+                    if temp_scan['QC'] == 1:
                         if temp_scan['QU_motion'] < best_qalas_qu_score:
                             best_qalas_qu_score = temp_scan['QU_motion']
                             best_qalas_aqc_score = temp_scan['aqc_motion']
@@ -331,14 +331,14 @@ def qalas_selection_without_qu_motion(downloaded_jsons):
             content = [content]
         for temp_scan in content:
             if temp_scan['SeriesType'] == 'qMRI':
-                #Be sure that at least the QU_motion, aqc_motion and HBCD_compliant fields are there
-                if (type(temp_scan['aqc_motion']) == type(None)) or (type(temp_scan['HBCD_compliant']) == type(None)) or (type(temp_scan['brain_SNR']) == type(None)):
-                    sys.stdout.write('   Processing can be attempted later: Either aqc_motion, or HBCD_compliant status is missing for one scan within {}'.format(temp_json))
+                #Be sure that at least the QU_motion, aqc_motion and QC fields are there
+                if (type(temp_scan['aqc_motion']) == type(None)) or (type(temp_scan['QC']) == type(None)) or (type(temp_scan['brain_SNR']) == type(None)):
+                    sys.stdout.write('   Processing can be attempted later: Either aqc_motion, or QC status is missing for one scan within {}'.format(temp_json))
                     sys.stdout.flush()
                     return None, True
                 try:
                     sys.stdout.flush()
-                    if temp_scan['HBCD_compliant'] == 'Yes':
+                    if temp_scan['QC'] == 1:
                         if temp_scan['aqc_motion'] < best_qalas_aqc_score:
                             best_qalas_aqc_score = temp_scan['aqc_motion']
                             best_qalas_snr = temp_scan['brain_SNR']
@@ -740,7 +740,7 @@ def main():
         sessions that have a QALAS scan and are ready to be processed, download the
         archive containing the best QALAS scan, unpack the archive, and identify
         the dicom folder that contains the QALAS scan. The best QALAS is determined
-        based on the following ranking heirarchy (1) HBCD_Compliant, (2) QU_motion,
+        based on the following ranking heirarchy (1) QC, (2) QU_motion,
         (3) aqc_motion, (4) brain_SNR. If QU_motion is missing from one or more QALAS
         scans, then QU_motion will be excluded from the file comparison procedure. If
         one or more value (besides QU_motion) is missing for one or more QALAS scans,
@@ -948,10 +948,10 @@ def main():
         sys.stdout.flush()
         
         #Evaluate the jsons to find the best QALAS scan
-        print('   First evaluating runs based on HBCD_Compliant, QU_motion, aqc_motion, and brain_SNR.')
+        print('   First evaluating runs based on QC, QU_motion, aqc_motion, and brain_SNR.')
         best_qalas_info, qc_or_other_missing = qalas_selection_with_qu_motion(downloaded_jsons)
         if type(best_qalas_info) == type(None):
-            print('   Instead evaluating runs based only on HBCD_Compliant, aqc_motion, and brain_SNR.')
+            print('   Instead evaluating runs based only on QC, aqc_motion, and brain_SNR.')
             best_qalas_info, qc_or_other_missing = qalas_selection_without_qu_motion(downloaded_jsons)
 
                                 
