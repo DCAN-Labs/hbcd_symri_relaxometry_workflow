@@ -456,7 +456,7 @@ def targz_to_sub_ses_labels(targz_name):
     
     split_name = targz_name.split('/')[-1].split('_')
     if len(split_name) >= 3:
-        if (len(split_name[0]) == 9) and (len(split_name[1]) == 6) and (len(split_name[2]) == 3) and (split_name[2][0] == 'P'):
+        if (len(split_name[0]) == 9) and (len(split_name[1]) == 6) and ((len(split_name[2]) == 3) or (len(split_name[2]) == 4)) and (split_name[2][0] == 'P'):
             if len(split_name) == 3:
                 sub_label = split_name[1]
                 ses_label = split_name[2].split('.')[0]
