@@ -406,7 +406,12 @@ def unpack_qalas_from_targz(tar_path, output_path, SeriesInstanceUID = None, Stu
         if len(files):
             for num in range(min(5, len(files))):
                 tmp_dcm = dcmread(files[num])
-                if ('QALAS' in tmp_dcm[0x0008, 0x103e]._value.upper()) or ('MAGIC' in tmp_dcm[0x0008, 0x103e]._value.upper()):
+                if (0x0008, 0x103e) not in tmp_dcm:
+                    sys.stdout.write('   Series Description missing; skipping dicom: {}\n'.format(files[num]))
+                    sys.stdout.flush()
+                    continue
+                series_desc = str(tmp_dcm[0x0008, 0x103e]._value)
+                if ('QALAS' in series_desc.upper()) or ('MAGIC' in series_desc.upper()):
 
                     #Skip processing if the it examcard is associated with
                     #an early Philips acquisition before protocol was updated
@@ -1099,5 +1104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
