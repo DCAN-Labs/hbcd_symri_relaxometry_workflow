@@ -711,17 +711,8 @@ def push_to_s3(base_bids_dir, subject_label, bucket_name = None,
         sys.stdout.write('   Upload target bucket: {} prefix: {}\n'.format(bucket_name, prefix))
         current_file = None
         for temp_file in files:
-            if os.path.isfile(temp_file) == False:
-                continue
             current_file = temp_file
-            file_size = os.path.getsize(temp_file)
-            with open(temp_file, 'rb') as f:
-                response = client.put_object(
-                    Bucket=bucket_name,
-                    Key=os.path.join(prefix, temp_file),
-                    Body=f,
-                    ContentLength=file_size
-                )
+            response = client.upload_file(temp_file, bucket_name, os.path.join(prefix, temp_file))
     except Exception as e:
         sys.stdout.write('   Upload failed for sub-{}: {}: {}\n'.format(subject_label, type(e).__name__, e))
         if current_file:
