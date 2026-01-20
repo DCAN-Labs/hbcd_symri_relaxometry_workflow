@@ -26,14 +26,16 @@ Steps of processing are roughly as follows:
    processing based on QC info provided by the json file.
 2. If the file reproc_log.json exists in the base directory, then
    load it. This file contains a list of subjects/sessions that could need
-   to be reprocessed based on new data. If a subject appears in the
-   consider_reprocessing portion of the json, any new archives for the
-   session will be ignored. If the user has added a subject/session
-   to the to_reprocess portion of the json, then the code will attempt
-   to overwrite any existing processing for that subject/session. This
-   may result in either the same or different processing results depending
-   on the new data that is available for the subject. If the reproc_log.json
-   file does not exist, then the code will create it.
+   to be reprocessed based on new data. If a subject appears in any
+   status list other than to_reprocess (for example, new_archive_available,
+   qalas_in_qc_but_not_archive, no_niftis_to_upload, missing_archive, or
+   bad_philips), the session will be skipped unless it is explicitly listed
+   in to_reprocess. If the user has added a subject/session to the
+   to_reprocess portion of the json, then the code will attempt to overwrite
+   any existing processing for that subject/session. This may result in
+   either the same or different processing results depending on the new data
+   that is available for the subject. If the reproc_log.json file does not
+   exist, then the code will create it.
 3. Iterate through all subjects/sessions that need to be processed. For subjects/
    sessions that have a QALAS scan and are ready to be processed, download the
    archive containing the best QALAS scan, unpack the archive, and identify
@@ -52,6 +54,7 @@ Steps of processing are roughly as follows:
 If processing is interrupted after partial processing has occurred, the derivatives may still be
 uploaded to S3 despite the tracking logs/jsons not being updated. Upon reprocessing, data from these
 runs will be overwritten which should not cause any issues. If the data under
-{base_directory_for_proc}/work_dir is not properly deleted because of an error, this
-may require the user to delete any contents of the working directory. As long as the log
-files remain intact, processing should be able to pick up in the usual fashion following the deletion.
+{base_directory_for_proc}/working_dir (or the custom work dir if provided) is
+not properly deleted because of an error, this may require the user to delete
+any contents of the working directory. As long as the log files remain intact,
+processing should be able to pick up in the usual fashion following the deletion.
