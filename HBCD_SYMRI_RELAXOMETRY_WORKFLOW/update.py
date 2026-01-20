@@ -693,13 +693,21 @@ def push_to_s3(base_bids_dir, subject_label, bucket_name = None,
                 host_base = temp_line.split('=')[-1].strip()
                 if 'https' != host_base[:5]:
                     host_base = 'https://' + host_base
+
+    cfg = Config(
+        # Disable the new chunked-with-trailer uploads except when S3
+        # explicitly *requires* them (rare operations such as DeleteObjects).
+        request_checksum_calculation="when_required",
+        response_checksum_validation="when_required",
+    )
         
     #Create s3 client
     client = boto3.client(
         's3',
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,
-        endpoint_url =host_base
+        endpoint_url =host_base,
+        config=cfg
     )
     
     try:
