@@ -559,7 +559,9 @@ def convert_single_tar(qalas_folders, supplemental_infos, qalas_info_dict,
     sys.stdout.write('   dcm_maps_path: {}\n'.format(dcm_maps_path))
     sys.stdout.flush()
     time.sleep(10)
-    if len(glob.glob(os.path.join(dcm_maps_path, '*'))) >= 7:
+    dcm_maps_entries = glob.glob(os.path.join(dcm_maps_path, '*'))
+    dcm_maps_count = len(dcm_maps_entries)
+    if dcm_maps_count >= 7:
 
         try:
             dcm2bids_command = dcm2bids_base_command.format(dcm2bids_executable_path=dcm2bids_executable_path, dcm_maps_path=dcm_maps_path, dcm2bids_config_path=dcm2bids_config_path, tmp_bids_dir=tmp_bids_dir, subject_label=subject_label, session_label=session_label)
@@ -641,6 +643,7 @@ def convert_single_tar(qalas_folders, supplemental_infos, qalas_info_dict,
         output_info['num_niftis_generated'] = 0
         output_info['symri_conversion_error'] = 1
         sys.stdout.write('   SyMRI Container was unable to convert QALAS dicoms to Synthetic Maps\n')
+        sys.stdout.write('   Found {} entries in dcm_maps_path\n'.format(dcm_maps_count))
         sys.stdout.flush()
     
     return output_info
