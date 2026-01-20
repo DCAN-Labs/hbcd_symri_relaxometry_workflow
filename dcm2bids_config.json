@@ -1,0 +1,61 @@
+{
+	"descriptions": [
+	{
+		"datatype": "anat",
+		"suffix": "T1map",
+		"custom_entities" : ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "QMAP", "T1"],
+			"SeriesDescription": "T1 *"
+		}
+	},
+	{
+		"datatype": "anat",
+		"suffix": "T2map",
+		"custom_entities" : ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "QMAP", "T2"],
+			"SeriesDescription": "T2 *"
+		}
+	},
+	{
+		"datatype": "anat",
+		"suffix": "T1w",
+		"custom_entities": ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "T1", "SYNTHETIC"],
+			"SeriesDescription": "T1W *"
+		}
+	},
+	{
+		"datatype": "anat",
+		"suffix": "T2w",
+		"custom_entities" : ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "T2", "SYNTHETIC"],
+			"SeriesDescription": "T2W *"
+		}
+	},
+	{
+		"datatype": "anat",
+		"suffix": "PDmap",
+		"custom_entities" : ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "QMAP", "PD"],
+			"SeriesDescription": "PD*"
+		}
+	},
+	{
+		"datatype": "anat",
+		"suffix": "TB1map",
+		"custom_entities": ["acq-QALAS"],
+		"criteria": {
+			"ImageType": ["DERIVED", "PRIMARY", "QMAP", "B1"],
+			"SeriesDescription": "B1*"
+		}
+	}
+	
+	
+	
+	]
+}
