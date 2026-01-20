@@ -708,9 +708,16 @@ def push_to_s3(base_bids_dir, subject_label, bucket_name = None,
         os.chdir(base_bids_dir)
         files = glob.glob('sub*/ses*/anat/*')
         sys.stdout.write('   Files to upload: {}\n'.format(files))
+        sys.stdout.write('   Upload target bucket: {} prefix: {}\n'.format(bucket_name, prefix))
+        current_file = None
         for temp_file in files:
+            current_file = temp_file
             response = client.upload_file(temp_file, bucket_name, os.path.join(prefix, temp_file))
-    except:
+    except Exception as e:
+        sys.stdout.write('   Upload failed for sub-{}: {}: {}\n'.format(subject_label, type(e).__name__, e))
+        if current_file:
+            sys.stdout.write('   Last file attempted: {}\n'.format(current_file))
+        sys.stdout.write('   Base BIDS dir: {}\n'.format(base_bids_dir))
         sys.stdout.write('   Either part or all of uploading Failed for sub-{}, the corresponding session will not be save to the log file so that processing will run again later.\n'.format(subject_label))
         sys.stdout.flush()
         return False
