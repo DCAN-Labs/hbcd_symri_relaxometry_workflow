@@ -1,4 +1,5 @@
 import boto3
+from botocore.config import Config
 import numpy as np
 import os, glob, json, sys, tarfile, shutil
 from pydicom import dcmread
