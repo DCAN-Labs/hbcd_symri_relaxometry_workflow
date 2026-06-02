@@ -3,7 +3,10 @@
 ## Requirements
 - Python 3.9 (tested with 3.9.18)
 - Conda environment defined in `environment.yml`
-- Access to a SyMRI container (path required at runtime; not distributed here)
+- [Singularity](https://sylabs.io/singularity/) (for running the SyMRI container)
+- `dcm2bids`
+- A valid SyMRI container (`.sif`) with license configured
+- AWS-compatible S3 credentials config file (see [Configuration](#configuration))
 
 ## Setup
 ```sh
@@ -58,3 +61,132 @@ runs will be overwritten which should not cause any issues. If the data under
 not properly deleted because of an error, this may require the user to delete
 any contents of the working directory. As long as the log files remain intact,
 processing should be able to pick up in the usual fashion following the deletion.
+
+## Usage
+``` bash
+python ./HBCD_SYMRI_RELAXOMETRY_WORKFLOW/update.py \
+dicom_config_path/ \
+bids_config_path/ \
+symri_container_path/ \
+base_directory_for_proc/ \
+--custom_processing_batch_size=500 \
+--dicom_prefix HPBCH \
+--custom_work_dir /path/to/wd \
+```
+
+## Flags
+### Positional Arguments
+ 
+| Argument | Description |
+|---|---|
+| `dicom_config_path` | Path to S3 config file for the bucket containing DICOM archives |
+| `bids_config_path` | Path to S3 config file for the bucket where BIDS derivatives will be stored |
+| `symri_container_path` | Path to the SyMRI Singularity container (`.sif`) |
+| `base_directory_for_proc` | Directory where logs and intermediate processing files are stored |
+ 
+### Optional Arguments
+ 
+| Argument | Default | Description |
+|---|---|---|
+| `--custom_symri_layout` | bundled `.ini` | Path to a non-default SyMRI layout file |
+| `--custom_global_path` | bundled `.ini` | Path to a non-default SyMRI global file |
+| `--custom_dcm2bids_config_path` | bundled `.json` | Path to a non-default dcm2bids config file |
+| `--custom_processing_batch_size` | `20` | Max number of subject/session combos to process per run |
+| `--custom_dicom_bucket_name` | `hbcd-dicoms-main-study` | Name of the S3 bucket containing DICOM archives |
+| `--custom_bids_bucket_name` | `midb-hbcd-main-pr` | Name of the S3 bucket where results will be uploaded |
+| `--dicom_prefix` | `''` | Prefix to prepend when searching for DICOM archives in S3 |
+| `--custom_work_dir` | under `base_directory_for_proc` | Override the working directory for intermediate files |
+| `--keep_work_dirs` | `False` | Retain local intermediate files after processing |
+| `--no_upload` | `False` | Skip uploading to S3; implies `--keep_work_dirs` |
+| `--exclude_t1map` | `False` | Exclude T1 map from BIDS output |
+| `--exclude_t2map` | `False` | Exclude T2 map from BIDS output |
+| `--exclude_pdmap` | `False` | Exclude PD map from BIDS output |
+| `--exclude_tb1map` | `False` | Exclude B1 map from BIDS output |
+| `--exclude_t1w` | `False` | Exclude synthetic T1w image from BIDS output |
+| `--exclude_t2w` | `False` | Exclude synthetic T2w image from BIDS output |
+
+## Configuration
+ 
+S3 credentials are read from plain-text config files with the following format:
+ 
+```
+access_key = YOUR_ACCESS_KEY
+secret_key = YOUR_SECRET_KEY
+host_base = s3.example.com
+```
+ 
+Two separate config files are expected — one for the DICOM source bucket and one for the BIDS output bucket.
+
+ 
+## DICOM Archive Naming Convention
+ 
+The pipeline expects DICOM archives and QC JSON files formatted according to the HBCD study convention:
+ 
+```
+<PSCID>_<DCCID>_<SessionLabel>.tar.gz
+<PSCID>_<DCCID>_<SessionLabel>_mripcqc_info.json
+```
+ 
+- `PSCID`: 9-character site ID
+- `DCCID`: 6-character subject ID
+- `SessionLabel`: 3–4 character label beginning with `V` (visit) or `P`
+Example: `<PSCID>_<DCCID>_V02.tar.gz`
+
+ 
+## QALAS Scan Selection
+ 
+When multiple archives or scans exist for a subject/session, the best QALAS scan is selected using the following priority:
+ 
+1. **QC** — only scans with `QC == 1` are considered
+2. **QU_motion** — lower is better (skipped if unavailable for any scan)
+3. **aqc_motion** — lower is better
+4. **brain_SNR** — higher is better
+
+ 
+## Output
+ 
+Results are saved as BIDS derivatives under:
+ 
+```
+derivatives/ses-<session_label>/symri/sub-<subject>/ses-<session>/anat/
+```
+ 
+Output files (depending on exclusion flags) include:
+ 
+- `*_T1map.nii.gz` / `.json` — T1 relaxation map (ms)
+- `*_T2map.nii.gz` / `.json` — T2 relaxation map (ms)
+- `*_PDmap.nii.gz` / `.json` — Proton density map
+- `*_TB1map.nii.gz` / `.json` — B1 transmit field map
+- `*_desc-synthetic_T1w.nii.gz` — Synthetic T1-weighted image
+- `*_desc-synthetic_T2w.nii.gz` — Synthetic T2-weighted image
+- `*_desc-SymriContainer.log` — SyMRI processing log
+JSON sidecar files are enriched with provenance fields including `SeriesInstanceUID`, `StudyInstanceUID`, `QU_motion`, `aqc_motion`, and a `DerivativeDetails` block referencing the source DOI.
+ 
+ 
+## Tracking and Reprocessing Logs
+ 
+The pipeline maintains two log files under `<base_directory_for_proc>`:
+ 
+**`logs/tracking_log_<timestamp>.json`** — Records which archives were processed for each subject/session. Prevents redundant reprocessing across runs.
+ 
+**`reproc_log.json`** — Tracks sessions that may need reprocessing. Contains the following keys:
+ 
+| Key | Description |
+|---|---|
+| `to_reprocess` | Sessions manually flagged for reprocessing |
+| `new_archive_available` | Sessions with new data since last processing |
+| `qalas_in_qc_but_not_archive` | QALAS found in QC JSON but not in the archive |
+| `no_niftis_to_upload` | SyMRI produced no output |
+| `missing_archive` | Archive could not be downloaded |
+| `bad_philips` | Excluded due to known early Philips protocol issues |
+ 
+To trigger reprocessing of a session, add its key to the `to_reprocess` list in `reproc_log.json` and re-run the pipeline.
+ 
+ 
+## References
+ 
+- SyMRI: [https://doi.org/10.1016/j.mri.2019.08.031](https://doi.org/10.1016/j.mri.2019.08.031)
+- [HBCD Study](https://hbcdstudy.org/)
+- [dcm2bids](https://github.com/UNFmontreal/Dcm2Bids)
+- [BIDS Specification](https://bids-specification.readthedocs.io/)
+---
